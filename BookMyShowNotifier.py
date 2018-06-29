@@ -1,20 +1,21 @@
-import re
-import urllib2
-import datetime
-import locale
-from bs4 import BeautifulSoup
-import smtplib
+import time
+from smtplib import SMTP
+from urllib2 import Request
+from urllib2 import urlopen
 from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formatdate
+
+cinema = "PVR"
+url = "https://in.bookmyshow.com/buytickets/sanju-hyderabad/movie-hyd-ET00063643-MT/20180707"
 
 web_charset = "utf-8"
 mail_charset = "ISO-2022-JP"
 
 from_name = "BMS Notifier"
-from_address = "disposableemailaccount@gmail.com" # Sender address (Gmail address)
-from_password = "disposableemailaccountpassword" # Sender server password (Gmail password)
-to_address   = "myemailaccount@gmail.com" # Recipient address
+from_address = "bulk.dealalerts@gmail.com" # Sender address (Gmail address)
+from_password = "sarahahconvo" # Sender server password (Gmail password)
+to_address   = "akshaydamle95@gmail.com" # Recipient address
 
 def create_message(from_name, to_addr, subject, body, encoding):
 	msg = MIMEText(body, 'plain', encoding)
@@ -26,35 +27,24 @@ def create_message(from_name, to_addr, subject, body, encoding):
 
 def sendmail(subject, text):
 	msg = create_message(from_name, to_address, subject, text, mail_charset)
-	s = smtplib.SMTP('smtp.gmail.com', 587)
-	s.ehlo()
-	s.starttls()
-	s.ehlo()
+	s = SMTP('smtp.gmail.com', 587)
+	s.ehlo(), s.starttls(), s.ehlo()
 	s.login(from_address, from_password)
 	s.sendmail(from_address, to_address, msg.as_string())
 	s.close()
 
-class BookMyShowClient(object):
-  def __init__(self):
-    self.__url = "https://in.bookmyshow.com/buytickets/deadpool-2-hyderabad/movie-hyd-ET00049430-MT/20180523"
-    self.__html = None
-
-  def __download(self):
-    req = urllib2.Request(self.__url, headers={'User-Agent' : "Magic Browser"})
-    html = urllib2.urlopen(req).read()
-    return html
-
-  def get_now_showing(self):
-    if not self.__html:
-      self.__html = self.__download()
-    return self.__html
-
-bms_client = BookMyShowClient()
+def get_now_showing():
+	req = Request(url, headers={'User-Agent' : "Magic Browser"})
+	return urlopen(req).read()
 
 while True:
-  now_showing = bms_client.get_now_showing()
-  if "PVR ICON" in now_showing:
-    print "Tickets available."
-	mailsubject = u"Tickets Available!"
-	sendmail(mailsubject, "Tickets are available on BookMyShow.")
-	break
+	try:
+		now_showing = get_now_showing()
+		if url[-8:] in now_showing and cinema in now_showing:
+			break
+		time.sleep(30)
+	except:
+		time.sleep(30)
+
+print "Tickets available."
+sendmail(u"Tickets Available!", "Tickets are available on BookMyShow.")
